@@ -5,21 +5,23 @@ using UnityEngine.Events;
 [CreateAssetMenu(fileName = "InputReader", menuName = "Game/Input Reader")]
 public class InputReader : ScriptableObject, GameInput.IGameplayActions, GameInput.IDialoguesActions
 {
-	// gameplay
+	// Gameplay
 	public event UnityAction jumpEvent;
 	public event UnityAction jumpCanceledEvent;
 	public event UnityAction attackEvent;
-	public event UnityAction interactEvent;
-	public event UnityAction extraActionEvent;
+	public event UnityAction interactEvent; // Used to talk, pickup objects, interact with tools like the cooking cauldron
+	public event UnityAction extraActionEvent; // Used to bring up the inventory
 	public event UnityAction pauseEvent;
 	public event UnityAction<Vector2> moveEvent;
 	public event UnityAction<Vector2, bool> cameraMoveEvent;
 	public event UnityAction enableMouseControlCameraEvent;
 	public event UnityAction disableMouseControlCameraEvent;
+	public event UnityAction startedRunning;
+	public event UnityAction stoppedRunning;
 
 	// Dialogue
-	public event UnityAction advanceDialogueEvent = delegate { };
-	public event UnityAction onMoveSelectionEvent = delegate { };
+	public event UnityAction advanceDialogueEvent;
+	public event UnityAction onMoveSelectionEvent;
 
 	private GameInput gameInput;
 
@@ -80,6 +82,19 @@ public class InputReader : ScriptableObject, GameInput.IGameplayActions, GameInp
 		}
 	}
 
+	public void OnRun(InputAction.CallbackContext context)
+	{
+		switch (context.phase)
+		{
+			case InputActionPhase.Performed:
+				startedRunning?.Invoke();
+				break;
+			case InputActionPhase.Canceled:
+				stoppedRunning?.Invoke();
+				break;
+		}
+	}
+
 	public void OnPause(InputAction.CallbackContext context)
 	{
 		if (pauseEvent != null
@@ -123,12 +138,21 @@ public class InputReader : ScriptableObject, GameInput.IGameplayActions, GameInp
 	{
 		gameInput.Dialogues.Enable();
 		gameInput.Gameplay.Disable();
+		gameInput.Menus.Disable();
 	}
 
 	public void EnableGameplayInput()
 	{
 		gameInput.Gameplay.Enable();
 		gameInput.Dialogues.Disable();
+		gameInput.Menus.Disable();
+	}
+
+	public void EnableUIInput()
+	{
+		gameInput.Gameplay.Disable();
+		gameInput.Dialogues.Disable();
+		gameInput.Menus.Enable();
 	}
 
 	public void DisableAllInput()
